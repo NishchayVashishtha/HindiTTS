@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  # ── Hindi TTS REST API ──────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: hindi-tts-api:latest
+    container_name: hindi_tts_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./outputs:/app/outputs        # persist generated audio
+      - ./data:/app/data              # dataset access
+      - ./.env:/app/.env:ro           # env vars (read-only)
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ── Streamlit Web UI ────────────────────────────────────────────────────────
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui        # see below
+    image: hindi-tts-ui:latest
+    container_name: hindi_tts_ui
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./outputs:/app/outputs
+      - ./.env:/app/.env:ro
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  outputs:
