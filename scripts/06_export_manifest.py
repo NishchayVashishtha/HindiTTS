@@ -35,8 +35,10 @@ def create_manifest() -> None:
         }
         manifest.append(entry)
 
+    # Wrap in {"samples": [...]} so 08_format_sovits.py can consume it directly
+    manifest_doc = {"samples": manifest}
     with open(OUTPUT_MANIFEST, "w", encoding="utf-8") as f:
-        json.dump(manifest, f, ensure_ascii=False, indent=2)
+        json.dump(manifest_doc, f, ensure_ascii=False, indent=2)
 
     print(f"[+] Dataset manifest ready! Total samples: {len(manifest)}")
     print(f"[+] Saved: {os.path.abspath(OUTPUT_MANIFEST)}")
